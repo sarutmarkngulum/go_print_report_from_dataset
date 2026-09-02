@@ -41,6 +41,31 @@ func TestResolveDebugLogsReportsMappingProblems(t *testing.T) {
 	}
 }
 
+func TestResolveDebugLogsDoesNotReportHeadMetadataFieldAsExtra(t *testing.T) {
+	dataset := report.Dataset{
+		Items: report.Items{
+			DataSetHead: []report.ColumnMeta{
+				{Index: "1", Value: "month", Caption: "Month"},
+			},
+			DataSetItem: []report.ColumnMeta{
+				{Index: "1", Value: "amount", Datatype: "N", Caption: "Amount"},
+			},
+			ReportData: []report.Row{
+				{"amount": 10, "month": "2026-09", "unused": "x"},
+			},
+		},
+	}
+
+	preview := BuildPreview(dataset)
+
+	if hasDebug(preview.DebugLogs, "extra", "month") {
+		t.Fatal("did not expect head metadata field to be reported as extra")
+	}
+	if !hasDebug(preview.DebugLogs, "extra", "unused") {
+		t.Fatal("expected undeclared row field to be reported as extra")
+	}
+}
+
 func TestRenderIncludesDebugPanel(t *testing.T) {
 	renderer, err := NewHTMLRenderer()
 	if err != nil {

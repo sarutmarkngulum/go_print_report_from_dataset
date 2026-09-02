@@ -84,11 +84,16 @@ func ResolveDebugLogs(dataset report.Dataset, columns []report.Column) []report.
 			logs = append(logs, report.DebugLog{Level: "warning", Kind: "duplicate", Field: field, Message: fmt.Sprintf("metadata ระบุ field ซ้ำ %d ครั้ง", count)})
 		}
 	}
+	knownFields := make(map[string]bool, len(declared)+len(dataset.Items.DataSetHead))
+	for field := range declared {
+		knownFields[field] = true
+	}
 	for _, meta := range dataset.Items.DataSetHead {
 		field := strings.TrimSpace(meta.Value)
 		if field == "" {
 			continue
 		}
+		knownFields[field] = true
 		_, inHead := dataset.ReportHead[field]
 		_, inFirstRow := firstRowValue(rows, field)
 		if !inHead && !inFirstRow {
@@ -117,7 +122,7 @@ func ResolveDebugLogs(dataset report.Dataset, columns []report.Column) []report.
 
 	if len(metas) > 0 && len(rows) > 0 {
 		for field := range rows[0] {
-			if !declared[field] {
+			if !knownFields[field] {
 				logs = append(logs, report.DebugLog{Level: "info", Kind: "extra", Field: field, Message: "พบ key ใน row แต่ไม่มี metadata column จึงไม่แสดงในตาราง"})
 			}
 		}
